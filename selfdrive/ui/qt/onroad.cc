@@ -507,7 +507,8 @@ void OnroadHud::drawMaxSpeed(QPainter &p, UIState& s) {
         snprintf(str, sizeof(str), "%d", (int)(cruiseMaxSpeed*KM_TO_MILE + 0.5));
 
     configFont(p, "Open Sans", 76, "Bold");
-    drawText(p, rc.center().x(), 195, str, 255);
+    QColor textColor = QColor(255, 0, 255, 200);
+    drawTextWithColor(p, rc.center().x(), 195, str, textColor);
   } else {
     if(long_control) {
       configFont(p, "Open Sans", 48, "sans-semibold");

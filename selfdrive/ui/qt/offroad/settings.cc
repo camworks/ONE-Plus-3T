@@ -556,13 +556,13 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
   QList<ParamControl*> toggles;
 
   toggles.append(new ParamControl("UseClusterSpeed",
-                                            "Use Cluster Speed",
+                                            "Use cluster speed",
                                             "Use cluster speed instead of wheel speed.",
                                             "../assets/offroad/icon_road.png",
                                             this));
 
   toggles.append(new ParamControl("LongControlEnabled",
-                                            "Enable HKG Long Control",
+                                            "Enable HKG long control",
                                             "warnings: it is beta, be careful!! Openpilot will control the speed of your car",
                                             "../assets/offroad/icon_road.png",
                                             this));
@@ -580,19 +580,19 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             this));
 
   toggles.append(new ParamControl("LaneChangeEnabled",
-                                            "Enable Lane Change Assist",
+                                            "Enable lane change assist",
                                             "Perform assisted lane changes with openpilot by checking your surroundings for safety, activating the turn signal and gently nudging the steering wheel towards your desired lane. openpilot is not capable of checking if a lane change is safe. You must continuously observe your surroundings to use this feature.",
                                             "../assets/offroad/icon_road.png",
                                             this));
 
   toggles.append(new ParamControl("AutoLaneChangeEnabled",
-                                            "Enable Auto Lane Change(Nudgeless)",
+                                            "Enable auto lane change(Nudgeless)",
                                             "warnings: it is beta, be careful!!",
                                             "../assets/offroad/icon_road.png",
                                             this));
 
   toggles.append(new ParamControl("SccSmootherSlowOnCurves",
-                                            "Enable Slow On Curves",
+                                            "Enable slow on curves",
                                             "",
                                             "../assets/offroad/icon_road.png",
                                             this));
@@ -610,12 +610,12 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             this));
 
   toggles.append(new ParamControl("KeepSteeringTurnSignals",
-                                            "Keep steering while turn signals.",
+                                            "Keep steering while turn signals",
                                             "",
                                             "../assets/offroad/icon_openpilot.png",
                                             this));
   toggles.append(new ParamControl("WarningOverSpeedLimit",
-                                            "Warning when speed limit is exceeded.",
+                                            "Warning when speed limit is exceeded",
                                             "",
                                             "../assets/offroad/icon_openpilot.png",
                                             this));
@@ -627,7 +627,7 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             this));*/
 
   toggles.append(new ParamControl("DisableOpFcw",
-                                            "Disable Openpilot FCW",
+                                            "Disable openpilot FCW",
                                             "",
                                             "../assets/offroad/icon_shell.png",
                                             this));

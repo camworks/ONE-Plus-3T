@@ -14,10 +14,8 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 
-# WARNING: this value was determined based on the model's training distribution,
-#          model predictions above this speed can be unpredictable
-MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS  # 135 + 4 = 86 mph
-ACCEL_MAX = 2.0
+MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
+ACCEL_MAX = 3.0
 ACCEL_MIN = -3.5
 
 
@@ -113,13 +111,13 @@ class CarInterfaceBase():
   def create_common_events(self, cs_out, extra_gears=None, gas_resume_speed=-1, pcm_enable=True):
     events = Events()
 
-    if cs_out.doorOpen:
-      events.add(EventName.doorOpen)
-    if cs_out.seatbeltUnlatched:
-      events.add(EventName.seatbeltNotLatched)
-    if cs_out.gearShifter != GearShifter.drive and (extra_gears is None or
-       cs_out.gearShifter not in extra_gears):
-      events.add(EventName.wrongGear)
+    # if cs_out.doorOpen:
+    #   events.add(EventName.doorOpen)
+    # if cs_out.seatbeltUnlatched:
+    #   events.add(EventName.seatbeltNotLatched)
+    # if cs_out.gearShifter != GearShifter.drive and (extra_gears is None or
+    #    cs_out.gearShifter not in extra_gears):
+    #   events.add(EventName.wrongGear)
     if cs_out.gearShifter == GearShifter.reverse:
       events.add(EventName.reverseGear)
     if not cs_out.cruiseState.available:
@@ -167,6 +165,11 @@ class CarInterfaceBase():
         events.add(EventName.pcmEnable)
       elif not cs_out.cruiseState.enabled:
         events.add(EventName.pcmDisable)
+
+    # Auto_engage by Jangpoo
+    if cs_out.cruiseState.enabled:
+      if cs_out.gearShifter == GearShifter.drive and cs_out.vEgo > 15. * CV.KPH_TO_MS:
+        events.add(EventName.pcmEnable)
 
     return events
 
