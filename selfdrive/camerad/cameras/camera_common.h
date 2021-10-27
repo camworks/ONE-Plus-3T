@@ -25,7 +25,8 @@
 #define CAMERA_ID_LGC920 6
 #define CAMERA_ID_LGC615 7
 #define CAMERA_ID_AR0231 8
-#define CAMERA_ID_MAX 9
+#define CAMERA_ID_IMX477 9
+#define CAMERA_ID_MAX 10
 
 const int UI_BUF_COUNT = 4;
 const int YUV_BUFFER_COUNT = Hardware::EON() ? 100 : 40;
@@ -68,6 +69,7 @@ typedef struct FrameMetadata {
 
   // Focus
   unsigned int lens_pos;
+  float lens_sag;
   float lens_err;
   float lens_true_pos;
 } FrameMetadata;
@@ -129,4 +131,3 @@ void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
-void camerad_thread();

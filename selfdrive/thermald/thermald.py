@@ -13,10 +13,9 @@ from smbus2 import SMBus
 import cereal.messaging as messaging
 from cereal import log
 from common.filter_simple import FirstOrderFilter
-from common.numpy_fast import clip, interp
+from common.numpy_fast import interp
 from common.params import Params, ParamKeyType
 from common.realtime import DT_TRML, sec_since_boot
-from common.dict_helpers import strip_deprecated_keys
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.hardware import EON, TICI, PC, HARDWARE
@@ -58,6 +57,8 @@ prebuiltfile = '/data/openpilot/prebuilt'
 sshkeyfile = '/data/public_key'
 pandaflash_ongoing = '/data/openpilot/pandaflash_ongoing'
 
+LEON = False
+
 def read_tz(x):
   if x is None:
     return 0
@@ -81,25 +82,43 @@ def read_thermal(thermal_config):
 
 
 def setup_eon_fan():
+  global LEON
   os.system("echo 2 > /sys/module/dwc3_msm/parameters/otg_switch")
 
+  bus = SMBus(7, force=True)
+  try:
+    bus.write_byte_data(0x21, 0x10, 0xf)   # mask all interrupts
+    bus.write_byte_data(0x21, 0x03, 0x1)   # set drive current and global interrupt disable
+    bus.write_byte_data(0x21, 0x02, 0x2)   # needed?
+    bus.write_byte_data(0x21, 0x04, 0x4)   # manual override source
+  except IOError:
+    print("LEON detected")
+    LEON = True
+  bus.close()
 
 last_eon_fan_val = None
 def set_eon_fan(val):
-  global last_eon_fan_val
+  global LEON, last_eon_fan_val
 
   if last_eon_fan_val is None or last_eon_fan_val != val:
     bus = SMBus(7, force=True)
-    try:
-      i = [0x1, 0x3 | 0, 0x3 | 0x08, 0x3 | 0x10][val]
-      bus.write_i2c_block_data(0x3d, 0, [i])
-    except OSError:
+    if LEON:
+      try:
+        i = [0x1, 0x3 | 0, 0x3 | 0x08, 0x3 | 0x10][val]
+        bus.write_i2c_block_data(0x3d, 0, [i])
+      except IOError:
       # tusb320
-      if val == 0:
-        bus.write_i2c_block_data(0x67, 0xa, [0])
-      else:
-        bus.write_i2c_block_data(0x67, 0xa, [0x20])
-        bus.write_i2c_block_data(0x67, 0x8, [(val - 1) << 6])
+        if val == 0:
+          bus.write_i2c_block_data(0x67, 0xa, [0])
+          #bus.write_i2c_block_data(0x67, 0x45, [1<<2])
+        else:
+          #bus.write_i2c_block_data(0x67, 0x45, [0])
+          bus.write_i2c_block_data(0x67, 0xa, [0x20])
+          bus.write_i2c_block_data(0x67, 0x8, [(val - 1) << 6])
+    else:
+      bus.write_byte_data(0x21, 0x04, 0x2)
+      bus.write_byte_data(0x21, 0x03, (val*2)+1)
+      bus.write_byte_data(0x21, 0x04, 0x4)
     bus.close()
     last_eon_fan_val = val
 
@@ -199,6 +218,7 @@ def thermald_thread() -> NoReturn:
 
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
+  pandaState_prev = None
   should_start_prev = False
   handle_fan = None
   is_uno = False
@@ -365,7 +385,7 @@ def thermald_thread() -> NoReturn:
 
     # **** starting logic ****
 
-    # Ensure date/time are valid
+    # Check for last update time and display alerts if needed
     now = datetime.datetime.utcnow()
     startup_conditions["time_valid"] = True if ((now.year > 2020) or (now.year == 2020 and now.month >= 10)) else True # set True for battery less EON otherwise, set False.
     set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]))
@@ -427,10 +447,9 @@ def thermald_thread() -> NoReturn:
       set_offroad_alert_if_changed("Offroad_StorageMissing", (not Path("/data/media").is_mount()))
 
     # Handle offroad/onroad transition
-    should_start = all(onroad_conditions.values())
+    should_start = all(startup_conditions.values())
     if started_ts is None:
-      should_start = should_start and all(startup_conditions.values())
-
+      should_start = should_start and all(startup_conditions.values())    
     if should_start != should_start_prev or (count == 0):
       params.put_bool("IsOnroad", should_start)
       params.put_bool("IsOffroad", not should_start)
@@ -443,7 +462,7 @@ def thermald_thread() -> NoReturn:
         started_seen = True
     else:
       if onroad_conditions["ignition"] and (startup_conditions != startup_conditions_prev):
-        cloudlog.event("Startup blocked", startup_conditions=startup_conditions, onroad_conditions=onroad_conditions)
+        cloudlog.event("Startup blocked", startup_conditions=startup_conditions)
 
       started_ts = None
       if off_ts is None:
@@ -532,15 +551,15 @@ def thermald_thread() -> NoReturn:
       power_monitor.charging_ctrl(msg, ts, battery_charging_max, battery_charging_min)
 
     # report to server once every 10 minutes
-    if (count % int(600. / DT_TRML)) == 0:
-      if EON and started_ts is None and msg.deviceState.memoryUsagePercent > 40:
-        cloudlog.event("High offroad memory usage", mem=msg.deviceState.memoryUsagePercent)
+    #if (count % int(600. / DT_TRML)) == 0:
+    #  if EON and started_ts is None and msg.deviceState.memoryUsagePercent > 40:
+    #    cloudlog.event("High offroad memory usage", mem=msg.deviceState.memoryUsagePercent)
 
-      cloudlog.event("STATUS_PACKET",
-                     count=count,
-                     pandaState=(strip_deprecated_keys(pandaState.to_dict()) if pandaState else None),
-                     location=(strip_deprecated_keys(sm["gpsLocationExternal"].to_dict()) if sm.alive["gpsLocationExternal"] else None),
-                     deviceState=strip_deprecated_keys(msg.to_dict()))
+      # cloudlog.event("STATUS_PACKET",
+      #                count=count,
+      #                pandaState=(strip_deprecated_keys(pandaState.to_dict()) if pandaState else None),
+      #                location=(strip_deprecated_keys(sm["gpsLocationExternal"].to_dict()) if sm.alive["gpsLocationExternal"] else None),
+      #                deviceState=strip_deprecated_keys(msg.to_dict()))
 
     count += 1
 
