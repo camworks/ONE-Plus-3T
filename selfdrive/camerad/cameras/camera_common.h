@@ -25,7 +25,8 @@
 #define CAMERA_ID_LGC920 6
 #define CAMERA_ID_LGC615 7
 #define CAMERA_ID_AR0231 8
-#define CAMERA_ID_MAX 9
+#define CAMERA_ID_IMX477 9
+#define CAMERA_ID_MAX 10
 
 const int UI_BUF_COUNT = 4;
 const int YUV_BUFFER_COUNT = Hardware::EON() ? 100 : 40;
@@ -36,14 +37,10 @@ enum CameraType {
   WideRoadCam
 };
 
+// TODO: remove these once all the internal tools are moved to vipc
 const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
 const bool env_send_road = getenv("SEND_ROAD") != NULL;
 const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;
-
-// for debugging
-// note: ONLY_ROAD doesn't work, likely due to a mixup with wideRoad cam in the kernel
-const bool env_only_driver = getenv("ONLY_DRIVER") != NULL;
-const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 
 typedef void (*release_cb)(void *cookie, int buf_idx);
 
@@ -72,6 +69,7 @@ typedef struct FrameMetadata {
 
   // Focus
   unsigned int lens_pos;
+  float lens_sag;
   float lens_err;
   float lens_true_pos;
 } FrameMetadata;
@@ -133,4 +131,3 @@ void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
-void camerad_thread();
