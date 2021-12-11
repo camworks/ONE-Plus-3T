@@ -350,7 +350,7 @@ void OnroadHud::drawLaneLines(QPainter &painter, const UIScene &scene) {
   if (!scene.end_to_end) {
     // lanelines
     for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
-      painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, scene.lane_line_probs[i]));
+      painter.setBrush(QColor::fromRgbF(1.0, 0.0, 1.0, scene.lane_line_probs[i]));
       painter.drawPolygon(scene.lane_line_vertices[i].v, scene.lane_line_vertices[i].cnt);
     }
     // road edges
@@ -761,15 +761,15 @@ void OnroadHud::drawTurnSignals(QPainter &p, UIState& s) {
     bool left_on = car_state.getLeftBlinker();
     bool right_on = car_state.getRightBlinker();
 
-    const float img_alpha = 0.8f;
+    const float img_alpha = 0.9f;
     const int fb_w = width() / 2 - 200;
     const int center_x = width() / 2;
     const int w = fb_w / 25;
     const int h = 160;
     const int gap = fb_w / 25;
     const int margin = (int)(fb_w / 3.8f);
-    const int base_y = (height() - h) / 2;
-    const int draw_count = 8;
+    const int base_y = 100; //(height() - h) / 2;
+    const int draw_count = 10;
 
     int x = center_x;
     int y = base_y;
@@ -813,7 +813,7 @@ void OnroadHud::drawTurnSignals(QPainter &p, UIState& s) {
 
       if(blink_index >= draw_count) {
         blink_index = draw_count - 1;
-        blink_wait = UI_FREQ/4;
+        blink_wait = UI_FREQ/3;
       }
     }
     else {
