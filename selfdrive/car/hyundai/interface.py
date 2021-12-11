@@ -65,15 +65,15 @@ class CarInterface(CarInterfaceBase):
 
     # longitudinal
     ret.longitudinalTuning.kpBP = [0., 10.*CV.KPH_TO_MS, 20.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
-    ret.longitudinalTuning.kpV = [0.9, 0.78, 0.65, 0.45]
-    ret.longitudinalTuning.kiBP = [0., 50. * CV.KPH_TO_MS, 130. * CV.KPH_TO_MS]
-    ret.longitudinalTuning.kiV = [0.1, 0.18, 0.1]
+    ret.longitudinalTuning.kpV = [0.88, 0.72, 0.6, 0.4]
+    ret.longitudinalTuning.kiBP = [0., 30. * CV.KPH_TO_MS, 80. * CV.KPH_TO_MS, 130. * CV.KPH_TO_MS]
+    ret.longitudinalTuning.kiV = [0.01, 0.0135, 0.02, 0.01]
 
     ret.startAccel = -0.8
     ret.stopAccel = -2.5
-    ret.startingAccelRate = 5.  # brake_travel/s while releasing on restart
+    ret.startingAccelRate = 4.  # brake_travel/s while releasing on restart
     ret.stoppingDecelRate = 0.1  # brake_travel/s while trying to stop
-    ret.vEgoStopping = 0.6
+    ret.vEgoStopping = 0.5
     ret.vEgoStarting = 0.3
 
     # genesis
