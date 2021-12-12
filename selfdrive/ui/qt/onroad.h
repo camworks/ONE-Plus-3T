@@ -54,6 +54,8 @@ private:
   void drawTurnSignals(QPainter &p, UIState& s);
   void drawGpsStatus(QPainter &p, UIState& s);
   void drawDebugText(QPainter &p, UIState& s);
+  //boxkon
+  void drawCurrentGear(QPainter &p, UIState& s);
 
 public:
   void drawCommunity(QPainter &p, UIState& s);

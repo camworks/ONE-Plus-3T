@@ -444,6 +444,7 @@ void OnroadHud::drawCommunity(QPainter &p, UIState& s) {
   drawTurnSignals(p, s);
   drawGpsStatus(p, s);
   drawBottomIcons(p, s);
+  drawCurrentGear(p, s);
 
   if(s.show_debug && width() > 1200)
     drawDebugText(p, s);
@@ -616,6 +617,7 @@ void OnroadHud::drawBottomIcons(QPainter &p, UIState& s) {
   int gap = car_state.getCruiseGap();
   bool longControl = scc_smoother.getLongControl();
   int autoTrGap = scc_smoother.getAutoTrGap();
+  x = radius / 2 + (bdr_s * 2) + (radius + 50);
 
   p.save();
   p.setPen(Qt::NoPen);
@@ -935,4 +937,45 @@ void OnroadHud::drawDebugText(QPainter &p, UIState& s) {
   y += height;
   str.sprintf("Lead: %.1f/%.1f/%.1f\n", radar_dist, vision_dist, (radar_dist - vision_dist));
   p.drawText(text_x, y, str);
+}
+
+void NvgWindow::drawCurrentGear(QPainter &p) {
+  const SubMaster &sm = *(uiState()->sm);
+  auto car_state = sm["carState"].getCarState();
+  auto data = sm["carState"].getCarState();
+
+  float currentGear = car_state.getCurrentGear();
+  int gearShifter = (int)car_state.getGearShifter();
+  float textSize = 25 * 7.f;
+
+  QRect rc(220, 30, 184, 202);
+  p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
+  p.setBrush(QColor(0, 0, 0, 100));
+  p.drawRoundedRect(rc, 20, 20);
+  p.setPen(Qt::NoPen);
+
+  QString str;
+  configFont(p, "Open Sans", textSize, "Bold");
+
+  QColor textColor0 = QColor(120, 255, 120, 200);
+  QColor textColor1 = QColor(255, 0, 0, 200);
+  QColor textColor2 = QColor(255, 255, 255, 200);
+  QColor textColor3 = QColor(255, 255, 0, 200);
+
+  if ((currentGear < 9) && (currentGear !=0)) {
+    str.sprintf("%.0f", currentGear);
+    drawTextWithColor(p, rc.center().x(), rc.center().y() + 70, str, textColor0);
+  } else if (currentGear == 14 ) {
+    configFont(p, "Open Sans", textSize, "Bold");
+    drawTextWithColor(p, rc.center().x(), rc.center().y() + 70, "R", textColor1);
+  } else if (gearShifter == 1 ) {
+    configFont(p, "Open Sans", textSize, "Bold");
+    drawTextWithColor(p, rc.center().x(), rc.center().y() + 70, "P", textColor2);
+  } else if (gearShifter == 3 ) {
+    configFont(p, "Open Sans", textSize, "Bold");
+    drawTextWithColor(p, rc.center().x(), rc.center().y() + 70, "N", textColor3);
+  } else {
+    configFont(p, "Open Sans", textSize, "Bold");
+    drawTextWithColor(p, rc.center().x(), rc.center().y() + 70, "", textColor3);
+  }
 }
