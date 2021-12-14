@@ -56,7 +56,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
       recorder->update_screen();
     }
   });
-	record_timer->start(1000/UI_FREQ);
+	record_timer->start(1000/15);
 
   QWidget* recorder_widget = new QWidget(this);
   QVBoxLayout * recorder_layout = new QVBoxLayout (recorder_widget);
@@ -264,8 +264,6 @@ OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadHud::updateState(const UIState &s) {
-  if(QUIState::ui_state.recording)
-    update();
 }
 
 void OnroadHud::paintEvent(QPaintEvent *event) {
@@ -276,7 +274,6 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
 }
 
 void OnroadHud::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
-  p.save();
   QFontMetrics fm(p.font());
   QRect init_rect = fm.boundingRect(text);
   QRect real_rect = fm.boundingRect(init_rect, 0, text);
@@ -284,11 +281,9 @@ void OnroadHud::drawText(QPainter &p, int x, int y, const QString &text, int alp
 
   p.setPen(QColor(0xff, 0xff, 0xff, alpha));
   p.drawText(real_rect.x(), real_rect.bottom(), text);
-  p.restore();
 }
 
 void OnroadHud::drawTextWithColor(QPainter &p, int x, int y, const QString &text, QColor& color) {
-  p.save();
   QFontMetrics fm(p.font());
   QRect init_rect = fm.boundingRect(text);
   QRect real_rect = fm.boundingRect(init_rect, 0, text);
@@ -296,17 +291,14 @@ void OnroadHud::drawTextWithColor(QPainter &p, int x, int y, const QString &text
 
   p.setPen(color);
   p.drawText(real_rect.x(), real_rect.bottom(), text);
-  p.restore();
 }
 
 void OnroadHud::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity) {
-  p.save();
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
   p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
   p.setOpacity(opacity);
   p.drawPixmap(x - img_size / 2, y - img_size / 2, img_size, img_size, img);
-  p.restore();
 }
 
 // NvgWindow
@@ -398,9 +390,14 @@ void OnroadHud::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
 void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
   UIState *s = &QUIState::ui_state;
-  if (s->scene.world_objects_visible && !s->recording) {
-    QPainter p(this);
-    hud->drawCommunity(p, QUIState::ui_state);
+  if (s->scene.world_objects_visible) {
+    if(!s->recording) {
+      QPainter p(this);
+      hud->drawCommunity(p, QUIState::ui_state);
+    }
+    else {
+      hud->update();
+    }
   }
 
   double cur_draw_t = millis_since_boot();
@@ -423,6 +420,7 @@ void OnroadHud::drawCommunity(QPainter &p, UIState& s) {
 
   p.setRenderHint(QPainter::Antialiasing);
   p.setPen(Qt::NoPen);
+  p.setOpacity(1.);
 
   // Header gradient
   QLinearGradient bg(0, header_h - (header_h / 2.5), 0, header_h);
@@ -447,8 +445,7 @@ void OnroadHud::drawCommunity(QPainter &p, UIState& s) {
   drawSpeedLimit(p, s);
   drawTurnSignals(p, s);
   drawGpsStatus(p, s);
-  drawBottomIcons(p, s);
-  drawCurrentGear(p, s);
+  drawCurrentGear(p, s);  
 
   if(s.show_debug && width() > 1200)
     drawDebugText(p, s);
@@ -489,6 +486,8 @@ void OnroadHud::drawCommunity(QPainter &p, UIState& s) {
   configFont(p, "Open Sans", 34, "Regular");
   p.setPen(QColor(0xff, 0xff, 0xff, 220));
   p.drawText(rect().left() + 20, rect().height() - 15, infoText);
+
+  drawBottomIcons(p, s);
 }
 
 void OnroadHud::drawMaxSpeed(QPainter &p, UIState& s) {
@@ -623,11 +622,9 @@ void OnroadHud::drawBottomIcons(QPainter &p, UIState& s) {
   int autoTrGap = scc_smoother.getAutoTrGap();
   x = radius / 2 + (bdr_s * 2) + (radius + 50);
 
-  p.save();
   p.setPen(Qt::NoPen);
   p.setBrush(QBrush(QColor(0, 0, 0, 255 * .1f)));
   p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
-  p.restore();
 
   QString str;
   float textSize = 50.f;
@@ -668,6 +665,8 @@ void OnroadHud::drawBottomIcons(QPainter &p, UIState& s) {
     drawIcon(p, x, y, autohold > 1 ? ic_autohold_warning : ic_autohold_active,
             QColor(0, 0, 0, (255 * bg_alpha)), img_alpha);
   }
+
+  p.setOpacity(1.);
 }
 
 void OnroadHud::drawSpeedLimit(QPainter &p, UIState& s) {
@@ -697,9 +696,7 @@ void OnroadHud::drawSpeedLimit(QPainter &p, UIState& s) {
     int x = 30;
     int y = 270;
 
-    p.save();
     p.setPen(Qt::NoPen);
-
     p.setBrush(QBrush(QColor(255, 0, 0, 255)));
     QRect rect = QRect(x, y, radius, radius);
     p.drawEllipse(rect);
@@ -727,8 +724,6 @@ void OnroadHud::drawSpeedLimit(QPainter &p, UIState& s) {
     rect.adjust(-30, 0, 30, 0);
     p.setPen(QColor(255, 255, 255, 230));
     p.drawText(rect, Qt::AlignCenter, str_left_dist);
-
-    p.restore();
   }
   else {
     auto controls_state = sm["controlsState"].getControlsState();
@@ -741,7 +736,6 @@ void OnroadHud::drawSpeedLimit(QPainter &p, UIState& s) {
       int x = 30;
       int y = 270;
 
-      p.save();
       p.setPen(Qt::NoPen);
 
       p.setBrush(QBrush(QColor(255, 0, 0, 255)));
@@ -757,8 +751,6 @@ void OnroadHud::drawSpeedLimit(QPainter &p, UIState& s) {
       configFont(p, "Open Sans", 70, "Bold");
       p.setPen(QColor(0, 0, 0, 230));
       p.drawText(rect, Qt::AlignCenter, "CAM");
-
-      p.restore();
     }
   }
 }
@@ -778,15 +770,15 @@ void OnroadHud::drawTurnSignals(QPainter &p, UIState& s) {
     bool left_on = car_state.getLeftBlinker();
     bool right_on = car_state.getRightBlinker();
 
-    const float img_alpha = 0.9f;
+    const float img_alpha = 0.8f;
     const int fb_w = width() / 2 - 200;
     const int center_x = width() / 2;
     const int w = fb_w / 25;
     const int h = 160;
     const int gap = fb_w / 25;
     const int margin = (int)(fb_w / 3.8f);
-    const int base_y = 100; //(height() - h) / 2;
-    const int draw_count = 10;
+    const int base_y = 120; //(height() - h) / 2;
+    const int draw_count = 12;
 
     int x = center_x;
     int y = base_y;
@@ -830,13 +822,15 @@ void OnroadHud::drawTurnSignals(QPainter &p, UIState& s) {
 
       if(blink_index >= draw_count) {
         blink_index = draw_count - 1;
-        blink_wait = UI_FREQ/3;
+        blink_wait = UI_FREQ/4;
       }
     }
     else {
       blink_index = 0;
     }
   }
+
+  p.setOpacity(1.);
 }
 
 void OnroadHud::drawGpsStatus(QPainter &p, UIState& s) {
@@ -864,6 +858,7 @@ void OnroadHud::drawGpsStatus(QPainter &p, UIState& s) {
   QString str;
   str.sprintf("%.1fm", accuracy);
   p.drawText(rect, Qt::AlignHCenter, str);
+  p.setOpacity(1.);
 }
 
 void OnroadHud::drawDebugText(QPainter &p, UIState& s) {
