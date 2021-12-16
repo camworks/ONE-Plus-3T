@@ -647,13 +647,23 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
 
 void NvgWindow::drawSpeed(QPainter &p) {
   UIState *s = uiState();
-  const SubMaster &sm = *(s->sm);
+  const SubMaster &sm = *(uiState()->sm);
+  auto car_state = sm["carState"].getCarState();
+  auto data = sm["carState"].getCarState();
   float cur_speed = std::max(0.0, sm["carState"].getCarState().getCluSpeedMs() * (s->scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
+
+  bool brakeLights = car_state.getBrakeLights();
+  bool brakePress = car_state.getBrakePressed();
+
+  QColor textColor = QColor(255, 255, 255, 200);
+
+  if( brakePress ) textColor = QColor(255, 0, 0, 200);
+  else if( brakeLights ) textColor = QColor(255, 0, 255, 100);
 
   QString speed;
   speed.sprintf("%.0f", cur_speed);
   configFont(p, "Open Sans", 176, "Bold");
-  drawText(p, rect().center().x(), 230, speed);
+  drawTextWithColor(p, rect().center().x(), 230, speed, textColor);
   configFont(p, "Open Sans", 66, "Regular");
   drawText(p, rect().center().x(), 310, s->scene.is_metric ? "km/h" : "mph", 200);
 }
