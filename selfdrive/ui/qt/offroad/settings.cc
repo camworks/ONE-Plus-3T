@@ -584,7 +584,7 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
 
   toggles.append(new ParamControl("UseClusterSpeed",
                                             "Use cluster speed",
-                                            "Use cluster speed instead of wheel speed.",
+                                            "Use cluster speed instead of wheel speed",
                                             "../assets/offroad/icon_road.png",
                                             this));
 
@@ -602,19 +602,19 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
 
   toggles.append(new ParamControl("IsLdwsCar",
                                             "LDWS",
-                                            "If your car only supports LDWS, turn it on.",
+                                            "If your car only supports LDWS, turn it on",
                                             "../assets/offroad/icon_openpilot.png",
                                             this));
 
   toggles.append(new ParamControl("LaneChangeEnabled",
                                             "Enable lane change assist",
-                                            "Perform assisted lane changes with openpilot by checking your surroundings for safety, activating the turn signal and gently nudging the steering wheel towards your desired lane. openpilot is not capable of checking if a lane change is safe. You must continuously observe your surroundings to use this feature.",
+                                            "Perform assisted lane changes with openpilot by checking your surroundings for safety, activating the turn signal and gently nudging the steering wheel towards your desired lane. openpilot is not capable of checking if a lane change is safe. You must continuously observe your surroundings to use this feature",
                                             "../assets/offroad/icon_road.png",
                                             this));
 
   toggles.append(new ParamControl("AutoLaneChangeEnabled",
                                             "Enable auto lane change(Nudgeless)",
-                                            "warnings: it is beta, be careful!!",
+                                            "warnings: it is beta, be careful",
                                             "../assets/offroad/icon_road.png",
                                             this));
 
@@ -642,8 +642,8 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             "../assets/offroad/icon_openpilot.png",
                                             this));
   toggles.append(new ParamControl("WarningOverSpeedLimit",
-                                            "Warning when speed limit is exceeded",
-                                            "",
+                                            "Warning when speeding",
+                                            "Warning when the current speed exceeds the speed limit",
                                             "../assets/offroad/icon_openpilot.png",
                                             this));
 
