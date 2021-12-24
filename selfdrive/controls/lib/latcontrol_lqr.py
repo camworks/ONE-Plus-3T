@@ -6,7 +6,7 @@ from common.realtime import DT_CTRL
 from cereal import log
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 from selfdrive.ntune import nTune
-
+from selfdrive.config import Conversions as CV
 
 class LatControlLQR():
   def __init__(self, CP):
@@ -51,8 +51,11 @@ class LatControlLQR():
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
     steers_max = get_steer_max(CP, CS.vEgo)
-    #torque_scale = (0.45 + CS.vEgo / 60.0)**2  # Scale actuator model with speed
-    torque_scale = (0.35 + CS.vEgo / 60.0)**1.5
+
+    if CS.vEgo <= 100 * CV.KPH_TO_MS:
+      torque_scale = (0.45 + CS.vEgo / 60.0)**2  # Scale actuator model with speed
+    else:
+      torque_scale = (0.13 + CS.vEgo / 60.0)**0.8
 
     # Subtract offset. Zero angle should correspond to zero torque
     steering_angle_no_offset = CS.steeringAngleDeg - params.angleOffsetAverageDeg
