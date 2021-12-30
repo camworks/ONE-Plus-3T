@@ -9,7 +9,7 @@ from selfdrive.ntune import ntune_scc_get
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 # As per ISO 15622:2018 for all speeds
-ACCEL_MIN_ISO = -3.5  # m/s^2
+ACCEL_MIN_ISO = -3.0  # m/s^2
 ACCEL_MAX_ISO = 3.0  # m/s^2
 
 
