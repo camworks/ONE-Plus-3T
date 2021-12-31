@@ -88,7 +88,7 @@ class LongControl():
       a_target = 0.0
 
     if a_target > 0.:
-      a_target *= interp(CS.vEgo, [0., 4.], [1.2, 1.])
+      a_target *= interp(CS.vEgo, [0., 2.], [1.5, 1.])
 
     # TODO: This check is not complete and needs to be enforced by MPC
     a_target = clip(a_target, ACCEL_MIN_ISO, ACCEL_MAX_ISO)
@@ -128,7 +128,6 @@ class LongControl():
         output_accel -= CP.stoppingDecelRate * DT_CTRL * \
                         interp(output_accel, [CP.stopAccel, CP.stopAccel/2., 0], [0.3, 0.65, 1.2])
       output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
-
       self.reset(CS.vEgo)
 
     # Intention is to move again, release brake fast before handing control to PID
