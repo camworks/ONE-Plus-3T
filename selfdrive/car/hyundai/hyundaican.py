@@ -92,7 +92,7 @@ def create_lfahda_mfc(packer, enabled, active):
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
 def create_hda_mfc(packer, active, state, CS, left_lane, right_lane):
-  values = CS.lfahda
+  values = CS.hda
 
   ldwSysState = 0
   if left_lane:
@@ -123,7 +123,7 @@ def create_mdps12(packer, frame, mdps12):
 
   return packer.make_can_msg("MDPS12", 2, values)
 
-def create_scc11(packer, frame, car_fingerprint, enabled, set_speed, lead_visible, scc_live, scc11, active_cam, stock_cam, active):
+def create_scc11(packer, frame, enabled, set_speed, lead_visible, scc_live, scc11, active_cam, stock_cam, car_fingerprint, active):
   values = copy.copy(scc11)
   values["AliveCounterACC"] = frame // 2 % 0x10
 

@@ -65,7 +65,8 @@ class CarController():
     self.scc_live = not CP.radarOffCan
 
     self.turning_indicator_alert = False
-    self.lane_blink_on = False	
+    self.lane_blink_on = False
+    self.active_hda = None
 
     param = Params()
 
@@ -241,9 +242,9 @@ class CarController():
                                       CS.out.gasPressed, CS.out.brakePressed, CS.out.cruiseState.standstill,
                                       self.car_fingerprint))
 
-        activated_hda = road_speed_limiter_get_active()
-        can_sends.append(create_scc11(self.packer, frame, self.car_fingerprint, enabled, set_speed, lead_visible, self.scc_live, CS.scc11,
-                                      self.scc_smoother.active_cam, stock_cam, activated_hda))
+        active_hda = self.active_hda
+        can_sends.append(create_scc11(self.packer, frame, enabled, set_speed, lead_visible, self.scc_live, CS.scc11,
+                                      self.scc_smoother.active_cam, stock_cam, self.car_fingerprint, active_hda))
 
         if frame % 20 == 0 and CS.has_scc13:
           can_sends.append(create_scc13(self.packer, CS.scc13))

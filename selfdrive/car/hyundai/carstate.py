@@ -37,7 +37,7 @@ class CarState(CarStateBase):
     self.cruise_unavail_cnt = 0
 
     self.apply_steer = 0.
-    self.lfahda = None
+    self.hda = None
 
     # scc smoother
     self.acc_mode = False
@@ -229,7 +229,7 @@ class CarState(CarStateBase):
 
     # for activate HDA
     if self.CP.carFingerprint in FEATURES["send_has_hda"]:
-      self.lfahda = copy.copy(cp_cam.vl["LFAHDA_MFC"])
+      self.hda = copy.copy(cp_cam.vl["LFAHDA_MFC"])
 
     return ret
 
