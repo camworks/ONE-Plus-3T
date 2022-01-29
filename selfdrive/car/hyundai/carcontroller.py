@@ -17,6 +17,7 @@ from selfdrive.road_speed_limiter import road_speed_limiter_get_active
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 min_set_speed = 30 * CV.KPH_TO_MS
+activated_hda = road_speed_limiter_get_active() # activated_hda: 0 - off, 1 - main road, 2 - highway
 
 
 SP_CARS = (CAR.GENESIS, CAR.GENESIS_G70, CAR.GENESIS_G80,
@@ -66,7 +67,9 @@ class CarController():
 
     self.turning_indicator_alert = False
     self.lane_blink_on = False
-    self.active_hda = None
+    self.last_blinker_frame = 0
+
+    self.scc_smoother = SccSmoother()
 
     param = Params()
 
@@ -242,9 +245,8 @@ class CarController():
                                       CS.out.gasPressed, CS.out.brakePressed, CS.out.cruiseState.standstill,
                                       self.car_fingerprint))
 
-        active_hda = self.active_hda
         can_sends.append(create_scc11(self.packer, frame, enabled, set_speed, lead_visible, self.scc_live, CS.scc11,
-                                      self.scc_smoother.active_cam, stock_cam, self.car_fingerprint, active_hda))
+                                      self.scc_smoother.active_cam, stock_cam, self.car_fingerprint, activated_hda))
 
         if frame % 20 == 0 and CS.has_scc13:
           can_sends.append(create_scc13(self.packer, CS.scc13))
@@ -267,8 +269,6 @@ class CarController():
 
     # 20 Hz LFA MFA message
     if frame % 5 == 0:
-      activated_hda = road_speed_limiter_get_active()
-      # activated_hda: 0 - off, 1 - main road, 2 - highway
       if self.car_fingerprint in FEATURES["send_lfa_mfa"]:
         can_sends.append(create_lfahda_mfc(self.packer, enabled, activated_hda))
       elif CS.mdps_bus == 0:
