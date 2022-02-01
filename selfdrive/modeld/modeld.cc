@@ -51,7 +51,7 @@ mat3 update_calibration(Eigen::Matrix<float, 3, 4> &extrinsics, bool wide_camera
   return matmul3(yuv_transform, transform);
 }
 
-void run_model(ModelState &model, VisionIpcClient &vipc_client_main, std::optional<VisionIpcClient> &vipc_client_extra, bool main_wide_camera, bool use_extra) {
+void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
   SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration"});
@@ -80,6 +80,11 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, std::option
     // Keep receiving frames until we are at least 1 frame ahead of previous extra frame
     do {
       buf_main = vipc_client_main.recv(&meta_main);
+      if (meta_main.frame_id <= meta_extra.frame_id) {
+        LOGE("main camera behind! main: %d (%.5f), extra: %d (%.5f)",
+          meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
+          meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9);
+      }
     } while (buf_main != nullptr && meta_main.frame_id <= meta_extra.frame_id);
 
     if (buf_main == nullptr) {
@@ -87,10 +92,16 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, std::option
       continue;
     };
 
-    if (vipc_client_extra) {
+    if (use_extra_client) {
       // Keep receiving extra frames until frame id matches main camera
       do {
-        buf_extra = vipc_client_extra->recv(&meta_extra);
+        buf_extra = vipc_client_extra.recv(&meta_extra);
+
+        if (meta_main.frame_id > meta_extra.frame_id) {
+          LOGE("extra camera behind! main: %d (%.5f), extra: %d (%.5f)",
+            meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
+            meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9);
+        }
       } while (buf_extra != nullptr && meta_main.frame_id > meta_extra.frame_id);
 
       if (buf_extra == nullptr) {
@@ -101,8 +112,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, std::option
       if (meta_main.frame_id != meta_extra.frame_id || std::abs((int64_t)meta_main.timestamp_sof - (int64_t)meta_extra.timestamp_sof) > 10000000ULL) {
         LOGE("frames out of sync! main: %d (%.5f), extra: %d (%.5f)",
           meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
-          meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9
-        );
+          meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9);
       }
     } else {
       // Use single camera
@@ -170,6 +180,7 @@ int main(int argc, char **argv) {
 
   bool main_wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
   bool use_extra = USE_EXTRA;
+  bool use_extra_client = Hardware::TICI() && use_extra && !main_wide_camera;
 
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -181,17 +192,13 @@ int main(int argc, char **argv) {
   LOGW("models loaded, modeld starting");
 
   VisionIpcClient vipc_client_main = VisionIpcClient("camerad", main_wide_camera ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD, true, device_id, context);
-
-  std::optional<VisionIpcClient> vipc_client_extra;
-  if (Hardware::TICI() && use_extra && !main_wide_camera) {
-   vipc_client_extra = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, false, device_id, context);
-  }
+  VisionIpcClient vipc_client_extra = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, false, device_id, context);
 
   while (!do_exit && !vipc_client_main.connect(false)) {
     util::sleep_for(100);
   }
 
-  while (!do_exit && vipc_client_extra && !vipc_client_extra->connect(false)) {
+  while (!do_exit && use_extra_client && !vipc_client_extra.connect(false)) {
     util::sleep_for(100);
   }
 
@@ -201,12 +208,12 @@ int main(int argc, char **argv) {
     const VisionBuf *b = &vipc_client_main.buffers[0];
     LOGW("connected main cam with buffer size: %d (%d x %d)", b->len, b->width, b->height);
 
-    if (vipc_client_extra) {
-      const VisionBuf *wb = &vipc_client_extra->buffers[0];
+    if (use_extra_client) {
+      const VisionBuf *wb = &vipc_client_extra.buffers[0];
       LOGW("connected extra cam with buffer size: %d (%d x %d)", wb->len, wb->width, wb->height);
     }
 
-    run_model(model, vipc_client_main, vipc_client_extra, main_wide_camera, use_extra);
+    run_model(model, vipc_client_main, vipc_client_extra, main_wide_camera, use_extra, use_extra_client);
   }
 
   model_free(&model);
