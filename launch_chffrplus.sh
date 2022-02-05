@@ -3,6 +3,10 @@
 if [ ! -f "/data/openpilot/installer/boot_finish" ]; then
   echo "Installing fonts..."
   mount -o rw,remount /system
+  cp -rf /data/openpilot/installer/fonts/opensans* /system/fonts/
+  cp -rf /data/openpilot/installer/fonts/fonts.xml /system/etc/fonts.xml
+  chmod 644 /system/etc/fonts.xml
+  chmod 644 /system/fonts/opensans*  
 
   cp -f /data/openpilot/installer/spinner /data/openpilot/selfdrive/ui/qt/
 
@@ -10,6 +14,22 @@ if [ ! -f "/data/openpilot/installer/boot_finish" ]; then
   chmod 700 /data/openpilot/selfdrive/ui/qt/spinner
   touch /data/openpilot/installer/boot_finish
 
+elif [ ! -f "/system/fonts/opensans_regular.ttf" ]; then
+    sleep 3
+    mount -o remount,r /system
+
+    setprop persist.sys.locale ko-KR
+    setprop persist.sys.local ko-KR
+    setprop persist.sys.timezone Asia/Seoul
+
+    echo =================================================================
+    echo Ko-KR NanumGothic font install complete
+    echo Ko-KR locale change complete
+    echo Bootanimation change complete
+    echo =================================================================
+    echo Reboot Now..!!
+    echo =================================================================
+    reboot    
 fi
 
 if [ -z "$BASEDIR" ]; then
